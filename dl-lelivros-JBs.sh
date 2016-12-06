@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#countPage=1
-#countPageEnd=465
+countPage=1
+countPageEnd=465
 
 linkLeLivros="http://lelivros.top"
 linkDlSite="$linkLeLivros/book/page"
