@@ -103,7 +103,12 @@ downloadFile () {
     wget "$linkBookDl"
 
     fileNameDownload=$(basename "$linkBookDl")
-    fileNameNew=`echo "$fileNameDownload" | sed 's/?.*=//1'`
+
+    if echo "$fileNameDownload" | grep -q "%20"; then
+        fileNameDownload=`echo $fileNameDownload | sed 's/%20/ /g'`
+    fi
+
+    fileNameNew=`echo $fileNameDownload | sed 's/?.*=//1'`
     fileNameNewSize=`echo $fileNameNew | wc -c`
 
     if [ $fileNameNewSize -lt 10 ]; then
@@ -162,8 +167,6 @@ while [ $countPage -lt $countPageEnd ]; do
     cd ../
 done
 
-cd ../
-tmpLogName=`echo "$tmpLogName" | sed 's/..\///g'`
-tmpLogNameError=`echo "$tmpLogNameError" | sed 's/..\///g'`
-
+tmpLogName=`echo "$tmpLogName" | sed 's/..\///1'`
+tmpLogNameError=`echo "$tmpLogNameError" | sed 's/..\///1'`
 echo -e "\nEnd of log downloading at: `date`" | tee -a $tmpLogName -a $tmpLogNameError
