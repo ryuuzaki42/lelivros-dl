@@ -24,16 +24,37 @@
 #
 # Last update: 6/12/2016
 #
-countPage=1
-countPageEnd=465
+echo -e "\nThis script download book (files mobi, pdf, epub) from a lelivros site\n"
 
 linkLeLivros="http://lelivros.top"
 linkDlSite="$linkLeLivros/book/page"
 
+echo -n "Which page you want start the download: "
+read startPage
+
+if [ "$startPage" != '' ]; then
+    countPage=$startPage
+else
+    countPage=1
+fi
+
+wget $linkLeLivros/ -O index.html
+countPageEnd=`cat index.html | grep "ltima " | rev | cut -d "=" -f1 | cut -d"/" -f3 | rev`
+rm index.html
+
+echo "Will download from page \"$countPage\" to page \"$countPageEnd\""
+echo -en "Want continue? (y)es - (n)o (press enter to no): "
+read contine
+
+if [ "$contine" != 'y' ]; then
+    echo -e "\nJust exiting by user choice\n"
+    exit 0
+fi
+
 tmpLogName="log_"`date +%s`".r"
 tmpLogNameError="logError_"`date +%s`".r"
 
-echo -e "Log of Downloading book start at:`date`" | tee -a $tmpLogName -a $tmpLogNameError
+echo -e "Log of Downloading book start at: `date`" | tee -a $tmpLogName -a $tmpLogNameError
 
 tmpLogName="../../"$tmpLogName
 tmpLogNameError="../../"$tmpLogNameError
@@ -75,14 +96,16 @@ while [ $countPage -lt $countPageEnd ]; do
     cd $countPage
 
     echo -e "\n## Downloading the page: $countPage" | tee -a $tmpLogName -a $tmpLogNameError
-    wget -c $linkDlSite/$countPage/ -O index.html
+    echo
+    wget $linkDlSite/$countPage/ -O index.html
 
     pageLink=`cat index.html | grep "<a href=\"http.*rel" | cut -d"\"" -f2`
     rm index.html
 
     for linkBook in `echo -e "$pageLink"`; do
         echo -e "\n    ## Downloading: $linkBook" | tee -a $tmpLogName
-        wget -c "$linkBook" -O index.html
+        echo
+        wget "$linkBook" -O index.html
 
         downloadFile "$linkBook" mobi
         downloadFile "$linkBook" pdf
@@ -101,4 +124,4 @@ cd ../
 tmpLogName=`echo "$tmpLogName" | sed 's/..\///g'`
 tmpLogNameError=`echo "$tmpLogNameError" | sed 's/..\///g'`
 
-echo -e "\nEnd of log downloading at:`date`" | tee -a $tmpLogName -a $tmpLogNameError
+echo -e "\nEnd of log downloading at: `date`" | tee -a $tmpLogName -a $tmpLogNameError
