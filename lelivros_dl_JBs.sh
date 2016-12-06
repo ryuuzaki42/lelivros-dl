@@ -37,6 +37,7 @@ echo -e "Log of Downloading book start at:`date`" | tee -a $tmpLogName -a $tmpLo
 
 tmpLogName="../../"$tmpLogName
 tmpLogNameError="../../"$tmpLogNameError
+printLinkBookError=true
 
 mkdir books 2> /dev/null
 cd books/
@@ -46,19 +47,22 @@ downloadFile () {
     fileType=$2
 
     linkBookDl=`cat index.html | grep "jegueajato.*$fileType.*rel" | cut -d"'" -f2`
-
     wget "$linkBookDl"
 
     fileNameDownload=$(basename "$linkBookDl")
     fileNameNew=`echo "$fileNameDownload" | sed 's/?.*=//1'`
-
     fileNameNewSize=`echo $fileNameNew | wc -c`
 
     if [ $fileNameNewSize -lt 10 ]; then
         mkdir error 2> /dev/null
         mv index.html"$fileNameDownload" error/
-        echo -e "\n    ## Error downloading $fileType: $linkBook" | tee -a $tmpLogNameError
-        echo -e "\n        ## linkBookDl: $linkBookDl" | tee -a $tmpLogNameError
+
+        if [ $printLinkBookError == "true" ]; then
+            echo -e "    ## Error downloading: $linkBook" | tee -a $tmpLogNameError
+        fi
+
+        printLinkBookError=false
+        echo -e "        $fileType: $linkBookDl" | tee -a $tmpLogNameError
     else
         echo "        $linkBookDl" >> $tmpLogName
         mv "$fileNameDownload" "$fileNameNew"
@@ -85,6 +89,8 @@ while [ $countPage -lt $countPageEnd ]; do
         downloadFile "$linkBook" epub
 
         rm index.html
+
+        printLinkBookError=true
     done
 
     ((countPage++))
