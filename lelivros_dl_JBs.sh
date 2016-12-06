@@ -134,8 +134,9 @@ while [ $countPage -lt $countPageEnd ]; do
     pageLink=`cat index.html | grep "<a href=\"http.*rel" | cut -d"\"" -f2`
     rm index.html
 
+    countBookInThisPage=1
     for linkBook in `echo -e "$pageLink"`; do
-        echo -e "\n    ## Downloading: $linkBook" | tee -a $tmpLogName
+        echo -e "\n    ## Downloading Page: $countPage BookNumber: $countBookInThisPage link: $linkBook" | tee -a $tmpLogName
         echo
         wget "$linkBook" -O index.html
 
@@ -154,6 +155,7 @@ while [ $countPage -lt $countPageEnd ]; do
         rm index.html
 
         printLinkBookError=true
+        ((countBookInThisPage++))
     done
 
     ((countPage++))
