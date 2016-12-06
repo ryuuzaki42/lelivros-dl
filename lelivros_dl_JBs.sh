@@ -26,7 +26,6 @@
 #
 countPage=1
 countPageEnd=465
-countPageEnd=1
 
 linkLeLivros="http://lelivros.top"
 linkDlSite="$linkLeLivros/book/page"
@@ -39,8 +38,32 @@ echo -e "Log of Downloading book start at:`date`" | tee -a $tmpLogName -a $tmpLo
 tmpLogName="../../"$tmpLogName
 tmpLogNameError="../../"$tmpLogNameError
 
-mkdir books
-cd books
+mkdir books 2> /dev/null
+cd books/
+
+downloadFile () {
+    linkBook=$1
+    fileType=$2
+
+    linkBookDl=`cat index.html | grep "jegueajato.*$fileType.*rel" | cut -d"'" -f2`
+
+    wget "$linkBookDl"
+
+    fileNameDownload=$(basename "$linkBookDl")
+    fileNameNew=`echo "$fileNameDownload" | sed 's/?.*=//1'`
+
+    fileNameNewSize=`echo $fileNameNew | wc -c`
+
+    if [ $fileNameNewSize -lt 10 ]; then
+        mkdir error 2> /dev/null
+        mv index.html"$fileNameDownload" error/
+        echo -e "\n    ## Error downloading $fileType: $linkBook" | tee -a $tmpLogNameError
+        echo -e "\n        ## linkBookDl: $linkBookDl" | tee -a $tmpLogNameError
+    else
+        echo "        $linkBookDl" >> $tmpLogName
+        mv "$fileNameDownload" "$fileNameNew"
+    fi
+}
 
 ((countPageEnd++))
 while [ $countPage -lt $countPageEnd ]; do
@@ -57,61 +80,11 @@ while [ $countPage -lt $countPageEnd ]; do
         echo -e "\n    ## Downloading: $linkBook" | tee -a $tmpLogName
         wget -c "$linkBook" -O index.html
 
-        linkBookDlMobi=`cat index.html | grep "jegueajato.*mobi.*rel" | cut -d"'" -f2`
-        linkBookDlPdf=`cat index.html | grep "jegueajato.*pdf.*rel" | cut -d"'" -f2`
-        linkBookDlEpub=`cat index.html | grep "jegueajato.*epub.*rel" | cut -d"'" -f2`
+        downloadFile "$linkBook" mobi
+        downloadFile "$linkBook" pdf
+        downloadFile "$linkBook" epub
+
         rm index.html
-
-        ## mobi
-        wget -c "$linkBookDlMobi"
-
-        fileNameDownloadMobi=$(basename "$linkBookDlMobi")
-        fileNameMobiNew=`echo "$fileNameDownloadMobi" | sed 's/?.*=//1'`
-
-        fileNameMobiNewSize=`echo $fileNameMobiNew | wc -c`
-
-        if [ $fileNameMobiNewSize -lt 10 ]; then
-            mkdir error 2> /dev/null
-            mv index.html"$fileNameDownloadMobi" error/
-            echo -e "\n        ## Error downloading mobi: $linkBook" | tee -a $tmpLogNameError
-        else
-            echo -e "\n        $linkBookDlMobi" >> $tmpLogName
-            mv "$fileNameDownloadMobi" "$fileNameMobiNew"
-        fi
-
-        ## pdf
-        wget -c "$linkBookDlPdf"
-
-        fileNameDownloadPdf=$(basename "$linkBookDlPdf")
-        fileNamePdfNew=`echo "$fileNameDownloadPdf" | sed 's/?.*=//1'`
-
-        fileNamePdfNewSize=`echo $fileNamePdfNew | wc -c`
-
-        if [ $fileNamePdfNewSize -lt 10 ]; then
-            mkdir error 2> /dev/null
-            mv index.html"$fileNameDownloadPdf" error/
-            echo -e "\n        ## Error downloading pdf: $linkBook" | tee -a $tmpLogNameError
-        else
-            echo "        $linkBookDlPdf" >> $tmpLogName
-            mv "$fileNameDownloadPdf" "$fileNamePdfNew"
-        fi
-
-        ## epub
-        wget -c "$linkBookDlEpub"
-
-        fileNameDownloadEpub=$(basename "$linkBookDlEpub")
-        fileNameEpubNew=`echo "$fileNameDownloadEpub" | sed 's/?.*=//1'`
-
-        fileNameEpubNewSize=`echo $fileNameEpubNew | wc -c`
-
-        if [ $fileNameEpubNewSize -lt 10 ]; then
-            mkdir error 2> /dev/null
-            mv index.html"$fileNameDownloadEpub" error/
-            echo -e "\n        ## Error downloading epub: $linkBook" | tee -a $tmpLogNameError
-        else
-            echo "        $linkBookDlEpub" >> $tmpLogName
-            mv "$fileNameDownloadEpub" "$fileNameEpubNew"
-        fi
     done
 
     ((countPage++))
