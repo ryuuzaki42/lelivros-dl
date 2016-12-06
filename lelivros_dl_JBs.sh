@@ -38,11 +38,18 @@ else
     countPage=1
 fi
 
-wget $linkLeLivros/ -O index.html
-countPageEnd=`cat index.html | grep "ltima " | rev | cut -d "=" -f1 | cut -d"/" -f3 | rev`
-rm index.html
+echo -n "Which page you want end the download: "
+read endPage
 
-echo "Will download from page \"$countPage\" to page \"$countPageEnd\""
+if [ "$endPage" != '' ]; then
+    countPageEnd=$endPage
+else
+    wget $linkLeLivros/ -O index.html
+    countPageEnd=`cat index.html | grep "ltima " | rev | cut -d "=" -f1 | cut -d"/" -f3 | rev`
+    rm index.html
+fi
+
+echo -e "\nWill download from page \"$countPage\" to page \"$countPageEnd\""
 echo -en "Want continue? (y)es - (n)o (press enter to no): "
 read contine
 
@@ -51,17 +58,42 @@ if [ "$contine" != 'y' ]; then
     exit 0
 fi
 
+echo -e "\nFiles type download"
+echo -en "\nMobi: (y)es - (n)o (hit enter to no): "
+read downloadMobi
+if [ "$downloadMobi" == 'y' ]; then
+    downloadMobi=true
+else
+    downloadMobi=false
+fi
+
+echo -en "\nPdf: (y)es - (n)o (hit enter to no): "
+read downloadPdf
+if [ "$downloadPdf" == 'y' ]; then
+    downloadPdf=true
+else
+    downloadPdf=false
+fi
+
+echo -en "\nEpub: (y)es - (n)o (hit enter to no): "
+read downloadEpub
+if [ "$downloadEpub" == 'y' ]; then
+    downloadEpub=true
+else
+    downloadEpub=false
+fi
+
+mkdir books_"$countPage"to"$countPageEnd" 2> /dev/null
+cd books_"$countPage"to"$countPageEnd"/
+
 tmpLogName="log_"`date +%s`".r"
 tmpLogNameError="logError_"`date +%s`".r"
 
 echo -e "Log of Downloading book start at: `date`" | tee -a $tmpLogName -a $tmpLogNameError
 
-tmpLogName="../../"$tmpLogName
-tmpLogNameError="../../"$tmpLogNameError
+tmpLogName="../"$tmpLogName
+tmpLogNameError="../"$tmpLogNameError
 printLinkBookError=true
-
-mkdir books 2> /dev/null
-cd books/
 
 downloadFile () {
     linkBook=$1
@@ -107,9 +139,17 @@ while [ $countPage -lt $countPageEnd ]; do
         echo
         wget "$linkBook" -O index.html
 
-        downloadFile "$linkBook" mobi
-        downloadFile "$linkBook" pdf
-        downloadFile "$linkBook" epub
+        if [ $downloadMobi == "true" ]; then
+            downloadFile "$linkBook" mobi
+        fi
+
+        if [ $downloadPdf == "true" ]; then
+            downloadFile "$linkBook" pdf
+        fi
+
+        if [ $downloadEpub == "true" ]; then
+            downloadFile "$linkBook" epub
+        fi
 
         rm index.html
 
