@@ -22,7 +22,7 @@
 #
 # Script: Download the books (mobi, pdf, epub) from a lelivros site
 #
-# Last update: 6/12/2016
+# Last update: 07/04/2017
 #
 echo -e "\nThis script download book (files mobi, pdf, epub) from a lelivros site\n"
 
@@ -30,7 +30,7 @@ linkLeLivros="http://lelivros.top"
 linkDlSite="$linkLeLivros/book/page"
 
 echo -n "Which page you want start the download: "
-read startPage
+read -r startPage
 
 if [ "$startPage" != '' ]; then
     countPage=$startPage
@@ -39,19 +39,19 @@ else
 fi
 
 echo -n "Which page you want end the download: "
-read endPage
+read -r endPage
 
 if [ "$endPage" != '' ]; then
     countPageEnd=$endPage
 else
     wget $linkLeLivros/ -O index.html
-    countPageEnd=`cat index.html | grep "ltima " | rev | cut -d "=" -f1 | cut -d"/" -f3 | rev`
+    countPageEnd=$(grep "ltima " < index.html | rev | cut -d "=" -f1 | cut -d"/" -f3 | rev)
     rm index.html
 fi
 
 echo -e "\nWill download from page \"$countPage\" to page \"$countPageEnd\""
 echo -en "Want continue? (y)es - (n)o (press enter to no): "
-read contine
+read -r contine
 
 if [ "$contine" != 'y' ]; then
     echo -e "\nJust exiting by user choice\n"
@@ -60,7 +60,7 @@ fi
 
 echo -e "\nFiles type download"
 echo -en "\nMobi: (y)es - (n)o (hit enter to no): "
-read downloadMobi
+read -r downloadMobi
 if [ "$downloadMobi" == 'y' ]; then
     downloadMobi=true
 else
@@ -68,7 +68,7 @@ else
 fi
 
 echo -en "\nPdf: (y)es - (n)o (hit enter to no): "
-read downloadPdf
+read -r downloadPdf
 if [ "$downloadPdf" == 'y' ]; then
     downloadPdf=true
 else
@@ -76,7 +76,7 @@ else
 fi
 
 echo -en "\nEpub: (y)es - (n)o (hit enter to no): "
-read downloadEpub
+read -r downloadEpub
 if [ "$downloadEpub" == 'y' ]; then
     downloadEpub=true
 else
@@ -84,12 +84,12 @@ else
 fi
 
 mkdir books_"$countPage"to"$countPageEnd" 2> /dev/null
-cd books_"$countPage"to"$countPageEnd"/
+cd books_"$countPage"to"$countPageEnd"/ || exit
 
-tmpLogName="log_"`date +%s`".r"
-tmpLogNameError="logError_"`date +%s`".r"
+tmpLogName="log_$(date +%s).r"
+tmpLogNameError="logError_$(date +%s).r"
 
-echo -e "Log of Downloading book start at: `date`" | tee -a $tmpLogName -a $tmpLogNameError
+echo -e "Log of Downloading book start at: $(date)" | tee -a "$tmpLogName" -a "$tmpLogNameError"
 
 tmpLogName="../"$tmpLogName
 tmpLogNameError="../"$tmpLogNameError
@@ -99,30 +99,30 @@ downloadFile () {
     linkBook=$1
     fileType=$2
 
-    linkBookDl=`cat index.html | grep "jegueajato.*$fileType.*rel" | cut -d"'" -f2`
+    linkBookDl=$(grep "jegueajato.*$fileType.*rel" < index.html | cut -d"'" -f2)
     wget "$linkBookDl"
 
     fileNameDownload=$(basename "$linkBookDl")
 
     if echo "$fileNameDownload" | grep -q "%20"; then
-        fileNameDownload=`echo $fileNameDownload | sed 's/%20/ /g'`
+        fileNameDownload=${fileNameDownload//%20/ }
     fi
 
-    fileNameNew=`echo $fileNameDownload | sed 's/?.*=//1'`
-    fileNameNewSize=`echo $fileNameNew | wc -c`
+    fileNameNew=${fileNameDownload//?.*=/)}
+    fileNameNewSize=${#fileNameNew}
 
-    if [ $fileNameNewSize -lt 10 ]; then
+    if [ "$fileNameNewSize" -lt 10 ]; then
         mkdir error 2> /dev/null
         mv index.html"$fileNameDownload" error/
 
-        if [ $printLinkBookError == "true" ]; then
-            echo -e "    ## Error downloading: $linkBook" | tee -a $tmpLogNameError
+        if [ "$printLinkBookError" == "true" ]; then
+            echo -e "    ## Error downloading: $linkBook" | tee -a "$tmpLogNameError"
         fi
 
         printLinkBookError=false
-        echo -e "        $fileType: $linkBookDl" | tee -a $tmpLogNameError
+        echo -e "        $fileType: $linkBookDl" | tee -a "$tmpLogNameError"
     else
-        echo "        $linkBookDl" >> $tmpLogName
+        echo "        $linkBookDl" >> "$tmpLogName"
         mv "$fileNameDownload" "$fileNameNew"
     fi
 }
@@ -130,18 +130,18 @@ downloadFile () {
 ((countPageEnd++))
 while [ $countPage -lt $countPageEnd ]; do
     mkdir $countPage
-    cd $countPage
+    cd $countPage || exit
 
-    echo -e "\n## Downloading the page: $countPage" | tee -a $tmpLogName -a $tmpLogNameError
+    echo -e "\n## Downloading the page: $countPage" | tee -a "$tmpLogName" -a "$tmpLogNameError"
     echo
     wget $linkDlSite/$countPage/ -O index.html
 
-    pageLink=`cat index.html | grep "<a href=\"http.*rel" | cut -d"\"" -f2`
+    pageLink=$(grep "<a href=\"http.*rel" < index.html | cut -d"\"" -f2)
     rm index.html
 
     countBookInThisPage=1
-    for linkBook in `echo -e "$pageLink"`; do
-        echo -e "\n    ## Downloading Page: $countPage BookNumber: $countBookInThisPage link: $linkBook" | tee -a $tmpLogName
+    for linkBook in $(echo -e "$pageLink"); do
+        echo -e "\n    ## Downloading Page: $countPage BookNumber: $countBookInThisPage link: $linkBook" | tee -a "$tmpLogName"
         echo
         wget "$linkBook" -O index.html
 
@@ -164,9 +164,9 @@ while [ $countPage -lt $countPageEnd ]; do
     done
 
     ((countPage++))
-    cd ../
+    cd ../ || exit
 done
 
-tmpLogName=`echo "$tmpLogName" | sed 's/..\///1'`
-tmpLogNameError=`echo "$tmpLogNameError" | sed 's/..\///1'`
-echo -e "\nEnd of log downloading at: `date`" | tee -a $tmpLogName -a $tmpLogNameError
+tmpLogName=$(echo "$tmpLogName" | sed 's/..\///1')
+tmpLogNameError=$(echo "$tmpLogNameError" | sed 's/..\///1')
+echo -e "\nEnd of log downloading at: $(date)" | tee -a "$tmpLogName" -a "$tmpLogNameError"
