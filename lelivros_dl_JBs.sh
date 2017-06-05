@@ -22,11 +22,11 @@
 #
 # Script: Download the books (mobi, pdf, epub) from a lelivros site
 #
-# Last update: 07/04/2017
+# Last update: 05/06/2017
 #
 echo -e "\nThis script download book (files mobi, pdf, epub) from a lelivros site\n"
 
-linkLeLivros="http://lelivros.top"
+linkLeLivros="http://lelivros.love"
 linkDlSite="$linkLeLivros/book/page"
 
 echo -n "Which page you want start the download: "
